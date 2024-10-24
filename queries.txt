@@ -1,0 +1,244 @@
+#1
+
+CREATE DATABASE LibraryManagement CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+
+USE LibraryManagement;
+
+CREATE TABLE authors (
+    author_id INT AUTO_INCREMENT PRIMARY KEY,
+    author_name VARCHAR(255)
+);
+
+CREATE TABLE genres (
+    genre_id INT AUTO_INCREMENT PRIMARY KEY,
+    genre_name VARCHAR(55)
+);
+
+CREATE TABLE books (
+    book_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255),
+    publication_year YEAR,
+    author_id INT,
+    genre_id INT,
+    FOREIGN KEY (author_id) REFERENCES authors(author_id),
+    FOREIGN KEY (genre_id) REFERENCES genres(genre_id)
+);
+
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255),
+    email VARCHAR(255)
+);
+
+CREATE TABLE borrowed_books (
+    borrow_id INT AUTO_INCREMENT PRIMARY KEY,
+    book_id INT,
+    user_id INT,
+    borrow_date DATE,
+    return_date DATE,
+    FOREIGN KEY (book_id) REFERENCES books(book_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+#2
+
+INSERT INTO authors (author_name) VALUES
+    ('Тарас Шевченко'),
+    ('Леся Українка');
+
+INSERT INTO genres (genre_name) VALUES
+    ('Поезія'),
+    ('Драма');
+
+INSERT INTO books (title, publication_year, author_id, genre_id) VALUES
+    ('Кобзар', 1940, 1, 1),
+    ('Блакитна троянда', 1996, 2, 2);
+
+INSERT INTO users (username, email) VALUES
+    ('vitalka', 'vitalii@gmail.com'),
+    ('natalka', 'natali@gmail.com');
+
+INSERT INTO borrowed_books (book_id, user_id, borrow_date, return_date) VALUES
+    (1, 1, '2024-09-21', '2024-10-10'),
+    (2, 2, '2024-10-24', NULL);
+
+#3
+
+SELECT
+    o.id AS order_id,
+    o.date AS order_date,
+    
+    c.name AS customer_name,
+    c.contact AS customer_contact,
+    c.city AS customer_city,
+    c.country AS customer_country,
+    
+    e.first_name AS employee_first_name,
+    e.last_name AS employee_last_name,
+    
+    s.name AS shipper_name,
+    s.phone AS shipper_phone,
+    
+    p.name AS product_name,
+    p.price AS unit_price, 
+    p.unit AS unit_type,
+    od.quantity,
+
+    cat.name AS category_name,
+    cat.description AS category_description,
+    
+    sup.name AS supplier_name,
+    sup.contact AS supplier_contact,
+    sup.country AS supplier_country
+FROM
+    orders o
+    INNER JOIN customers c ON o.customer_id = c.id
+    INNER JOIN employees e ON o.employee_id = e.employee_id
+    INNER JOIN shippers s ON o.shipper_id = s.id
+    INNER JOIN order_details od ON o.id = od.order_id
+    INNER JOIN products p ON od.product_id = p.id
+    INNER JOIN categories cat ON p.category_id = cat.id
+    INNER JOIN suppliers sup ON p.supplier_id = sup.id;
+
+#4_1
+
+SELECT
+    COUNT(*) as cnt
+FROM
+    orders o
+    INNER JOIN customers c ON o.customer_id = c.id
+    INNER JOIN employees e ON o.employee_id = e.employee_id
+    INNER JOIN shippers s ON o.shipper_id = s.id
+    INNER JOIN order_details od ON o.id = od.order_id
+    INNER JOIN products p ON od.product_id = p.id
+    INNER JOIN categories cat ON p.category_id = cat.id
+    INNER JOIN suppliers sup ON p.supplier_id = sup.id;
+
+#4_2
+
+SELECT
+    COUNT(*) as cnt
+FROM
+    orders o
+    LEFT JOIN customers c ON o.customer_id = c.id
+    INNER JOIN employees e ON o.employee_id = e.employee_id
+    LEFT JOIN shippers s ON o.shipper_id = s.id
+    INNER JOIN order_details od ON o.id = od.order_id
+    RIGHT JOIN products p ON od.product_id = p.id
+    INNER JOIN categories cat ON p.category_id = cat.id
+    RIGHT JOIN suppliers sup ON p.supplier_id = sup.id;
+
+Кількість рядків не змінюється. Можливо в тестовому наборі усі дані мають правильні референси, та немає незадіяних даних.
+Якщо б, наприклад, при LEFT JOIN у лівій таблиці були дані, що не мають відповідників справа - ми б отримали більше рядків, де неіснуючі дані були б заповнені нулями.
+Так як у #3 та #4_1 ми робимо INNER JOIN, то змінюючи INNER на LEFT-RIGHT ми б ніяк не змогли отримати менше рядків, кількість тільки б збільшувалась.
+
+
+#4_3
+
+SELECT
+    o.id AS order_id,
+    o.date AS order_date,
+
+    c.name AS customer_name,
+    c.contact AS customer_contact,
+    c.city AS customer_city,
+    c.country AS customer_country,
+
+    e.first_name AS employee_first_name,
+    e.last_name AS employee_last_name,
+
+    s.name AS shipper_name,
+    s.phone AS shipper_phone,
+
+    p.name AS product_name,
+    p.price AS unit_price,
+    p.unit AS unit_type,
+    od.quantity,
+
+    cat.name AS category_name,
+    cat.description AS category_description,
+
+    sup.name AS supplier_name,
+    sup.contact AS supplier_contact,
+    sup.country AS supplier_country
+FROM
+    orders o
+    INNER JOIN customers c ON o.customer_id = c.id
+    INNER JOIN employees e ON o.employee_id = e.employee_id
+    INNER JOIN shippers s ON o.shipper_id = s.id
+    INNER JOIN order_details od ON o.id = od.order_id
+    INNER JOIN products p ON od.product_id = p.id
+    INNER JOIN categories cat ON p.category_id = cat.id
+    INNER JOIN suppliers sup ON p.supplier_id = sup.id
+WHERE
+	e.employee_id > 3 AND e.employee_id <= 10;
+
+#4_4
+
+SELECT cat.name, COUNT(*) as count, AVG(od.quantity) as avg_quantity
+FROM
+    orders o
+    INNER JOIN customers c ON o.customer_id = c.id
+    INNER JOIN employees e ON o.employee_id = e.employee_id
+    INNER JOIN shippers s ON o.shipper_id = s.id
+    INNER JOIN order_details od ON o.id = od.order_id
+    INNER JOIN products p ON od.product_id = p.id
+    INNER JOIN categories cat ON p.category_id = cat.id
+    INNER JOIN suppliers sup ON p.supplier_id = sup.id
+WHERE
+	e.employee_id > 3 AND e.employee_id <= 10
+GROUP BY cat.name;
+
+#4_5
+
+SELECT cat.name, COUNT(*) as count, AVG(od.quantity) as avg_quantity
+FROM
+    orders o
+    INNER JOIN customers c ON o.customer_id = c.id
+    INNER JOIN employees e ON o.employee_id = e.employee_id
+    INNER JOIN shippers s ON o.shipper_id = s.id
+    INNER JOIN order_details od ON o.id = od.order_id
+    INNER JOIN products p ON od.product_id = p.id
+    INNER JOIN categories cat ON p.category_id = cat.id
+    INNER JOIN suppliers sup ON p.supplier_id = sup.id
+WHERE
+	e.employee_id > 3 AND e.employee_id <= 10
+GROUP BY cat.name
+HAVING avg_quantity > 21;
+
+#4_6
+
+SELECT cat.name, COUNT(*) as count, AVG(od.quantity) as avg_quantity
+FROM
+    orders o
+    INNER JOIN customers c ON o.customer_id = c.id
+    INNER JOIN employees e ON o.employee_id = e.employee_id
+    INNER JOIN shippers s ON o.shipper_id = s.id
+    INNER JOIN order_details od ON o.id = od.order_id
+    INNER JOIN products p ON od.product_id = p.id
+    INNER JOIN categories cat ON p.category_id = cat.id
+    INNER JOIN suppliers sup ON p.supplier_id = sup.id
+WHERE
+	e.employee_id > 3 AND e.employee_id <= 10
+GROUP BY cat.name
+HAVING avg_quantity > 21
+ORDER BY count DESC;
+
+#4_7
+
+SELECT cat.name, COUNT(*) as count, AVG(od.quantity) as avg_quantity
+FROM
+    orders o
+    INNER JOIN customers c ON o.customer_id = c.id
+    INNER JOIN employees e ON o.employee_id = e.employee_id
+    INNER JOIN shippers s ON o.shipper_id = s.id
+    INNER JOIN order_details od ON o.id = od.order_id
+    INNER JOIN products p ON od.product_id = p.id
+    INNER JOIN categories cat ON p.category_id = cat.id
+    INNER JOIN suppliers sup ON p.supplier_id = sup.id
+WHERE
+	e.employee_id > 3 AND e.employee_id <= 10
+GROUP BY cat.name
+HAVING avg_quantity > 21
+ORDER BY count DESC
+LIMIT 4 OFFSET 1;
